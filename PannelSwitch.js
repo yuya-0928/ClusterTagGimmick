@@ -24,10 +24,8 @@ $.onReceive((messageType, arg, sender) => {
 })
 
 $.onInteract((player) => {
-  $.log("Switch on Interact");
   const pannelManager = $.state.pannelManager;
   const switchNumber = $.state.switchNumber;
-  $.log(switchNumber);
   pannelManager.send("onSwitchInteracted", { player: player, interactedSwitchNumber: switchNumber })
 });
 

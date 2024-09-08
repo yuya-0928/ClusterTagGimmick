@@ -18,14 +18,12 @@ $.onStart(() => {
 })
 
 $.onInteract((player) => {
-  $.log('SkillsPannel on interact');
   const pannelManagerItemHandle = $.state.pannelManagerItemHandle;
   const skillsPannelItemHaneld = $.itemHandle;
   pannelManagerItemHandle.send("requestSkillsPannelEquipped", { player: player, skillsPannel: skillsPannelItemHaneld });
 });
 
 $.onReceive((messageType, arg, sender) => {
-  $.log('SkillsPannel get message');
   switch (messageType) {
     case "allowEquip": {
       $.log('allowEquip')
@@ -48,9 +46,6 @@ $.onReceive((messageType, arg, sender) => {
       const tagObject = $.subNode(tagName);
       const isDisplayed = tagObject.getEnabled();
       tagObject.setEnabled(!isDisplayed);
-      break;
-    }
-    case 'isPannelExistNear': {
       break;
     }
   }
@@ -77,6 +72,7 @@ $.onUpdate((deltaTime) => {
 
 function setPlayerPositionRotation(playerHandle) {
   if (!playerHandle) return;
+  $.log('setPlayerPositionRotation');
 
   const offset = new Vector3(0, 2, -0.5);
 
@@ -92,7 +88,6 @@ function setPlayerPositionRotation(playerHandle) {
     const currentPlayerHandle = $.state.playerHandle;
 
     const pannelManager = $.state.pannelManagerItemHandle;
-    $.log('pannel destroy and send onLeavePlayer');
     try {
       pannelManager.send("onLeavePlayer", currentPlayerHandle);
     } catch {
@@ -122,7 +117,6 @@ function deltaTimeFunction(deltaTime, restTime, argFunction) {
 
 function sendRequestPannelManegerId() {
   $.state.items[$.state.i].send("requestPannelManagerId", "");
-  $.log(`${$.state.items[$.state.i]}${$.state.i}にメッセージを送りました`);
 }
 
 function observePlayer(currentPlayerHandle) {

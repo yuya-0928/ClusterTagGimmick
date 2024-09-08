@@ -5,9 +5,9 @@
  *    player: PlayerHandle, 
  *    skillsPannel: ItemHandle
  *   },
- *  {
- *    playerId: PlayerHandle,
- *    skillsPannelItemHandle: ItemHandle
+*  {
+ *    player: PlayerHandle, 
+ *    skillsPannel: ItemHandle
  *   },
  * ]
  */
@@ -31,31 +31,24 @@ $.onStart(() => {
 
 $.onUpdate((deltaTime) => {
   deltaTimeFunction(deltaTime, 0.2, sendInitialize);
-
-  let pannelState = $.state.pannelState;
-  if (pannelState !== "initializing") {
-    $.subNode("Initializing").setEnabled(false);
-  }
+  deactivateInitializingPanel();  
 });
 
 $.onReceive((messageType, arg, sender) => {
-  $.log('PannelManager get message');
   switch (messageType) {
     case "onInitializeSkillsPannel": {
-      $.log('onInitializeSkillsPannel');
       const skillsPannelItemHandle = arg;
-      setStateSkillsPannelsList(skillsPannelItemHandle);
+      setStateSkillsPanelsList(skillsPannelItemHandle);
       break;
     }
     case "requestPannelManagerId": {
       const skillsPannelItemHandle = sender;
-      const pannelManager = $.itemHandle
-      skillsPannelItemHandle.send("pannelInitialize", pannelManager);
+      sendPanelInitialize(skillsPannelItemHandle);
+      
       break;
     }
     case "requestSkillsPannelEquipped": {
-      const pannelState = $.state.pannelState;
-      if (pannelState === "initializing") return;
+      if (isInitializingPannel()) return;
 
       const skillsPannelId = arg.skillsPannel.id
       const player = arg.player;
@@ -63,36 +56,20 @@ $.onReceive((messageType, arg, sender) => {
       break;
     }
     case "onSwitchInteracted": {
-      $.log('onSwitchInteracted');
-      const pannelState = $.state.pannelState;
-      if (pannelState === "initializing") return;
+      if (isInitializingPannel()) return;
 
       const player = arg.player;
-      // TODO: パネルを持っていなかったら、パネルをもたせる
-      const skillsPannelsList = $.state.skillsPannelsList
-      $.log(skillsPannelsList);
-      const skillsPannel = skillsPannelsList.filter(pannel => pannel.playerId === player.id)[0]
-      $.log(skillsPannel);
-
-      if (!skillsPannel) {
-        $.log('!skillsPannel')
-        let skillsPannelId
-        for(var i = 0; i < skillsPannelsList.length; i++) {
-          if(skillsPannelsList[i].playerId) continue;
-          skillsPannelId = skillsPannelsList[i].skillsPannel.id;
-          $.log('sendEventAllowEquip(skillsPannelId, player);')
-          sendEventAllowEquip(skillsPannelId, player);
-          break;
-        }
-      }
-
-      const playre = arg.player;
       const interactedSwitchNumber = arg.interactedSwitchNumber
-      sendEventTagChangeEvent(playre, interactedSwitchNumber);
+      
+      if (!isPlayerAlreadyEquipped(player)) {
+        assignPannelToPlayer(player);
+      }
+      sendEventTagChangeEvent(player, interactedSwitchNumber);
       break;
     }
     case "onLeavePlayer": {
-      removeSkillsPannelInfoFromState(arg);
+      const player = arg
+      removeSkillsPannelInfoFromState(player);
       break;
     }
   }
@@ -118,70 +95,77 @@ function deltaTimeFunction(deltaTime, restTime, argFunction) {
 function sendInitialize() {
   $.state.items[$.state.i].send("switchInitialize", "");
   $.state.items[$.state.i].send("pannelInitialize", "");
-  $.log(`${$.state.items[$.state.i]}${$.state.i}にメッセージを送りました`);
 }
 
-function setStateSkillsPannelsList(skillsPannelItemHandle) {
+function deactivateInitializingPanel() {
+  let pannelState = $.state.pannelState;
+  if (pannelState !== "initializing") {
+    $.subNode("Initializing").setEnabled(false);
+  }
+}
+
+function setStateSkillsPanelsList(skillsPannelItemHandle) {
   const skillsPannelsList = $.state.skillsPannelsList;
   skillsPannelsList.push({ player: null, skillsPannel: skillsPannelItemHandle })
   $.state.skillsPannelsList = skillsPannelsList;
 }
 
-function sendEventAllowEquip(skillsPannelId, player) {
-  $.log('sendEventAllowEquip');
-  const skillsPannelList = $.state.skillsPannelsList;
-
-  let playerAlreadyEquiped;
-  let alreadyEquipedPannel;
-  skillsPannelList.forEach(pannel => {
-    if (pannel.player && pannel.player.id === player.id) {
-      playerAlreadyEquiped = true;
-      alreadyEquipedPannel = pannel.skillsPannel;
-    }
-  })
-
-  try {
-    alreadyEquipedPannel.send('isPannelExistNear')
-  } catch {
-    for (var i = 0; i < skillsPannelList.length; i++) {
-      if (skillsPannelList[i].playerId === player.id) {
-        skillsPannelList.splice(i, 1);
-      }
-    }
-    playerAlreadyEquiped = false;
-  }
-
-  if (!playerAlreadyEquiped) {
-    $.log('playerAlreadyEquiped true');
-    skillsPannelList.forEach(pannel => {
-      if (pannel.skillsPannel.id === skillsPannelId) {
-        const isPlayerExist = Boolean(pannel.player)
-        if (!isPlayerExist) {
-          pannel.skillsPannel.send("allowEquip", player);
-          pannel.player = player;
-        }
-      }
-    })
-    $.state.skillsPannelsList = skillsPannelList;
-  }
+function sendPanelInitialize(skillsPannelItemHandle) {
+  const pannelManager = $.itemHandle
+  skillsPannelItemHandle.send("pannelInitialize", pannelManager);
 }
 
 function sendEventTagChangeEvent(player, interactedSwitchNumber) {
   const skillsPannelList = $.state.skillsPannelsList;
-  skillsPannelList.forEach(pannel => {
-    if (pannel.player && player.id === pannel.player.id) {
-      pannel.skillsPannel.send("tagChangeEvent", interactedSwitchNumber);
-    }
-  })
+  const skillsPannelIndex = skillsPannelList.findIndex(panel => panel.player && panel.player.id === player.id);
+  skillsPannelList[skillsPannelIndex].skillsPannel.send("tagChangeEvent", interactedSwitchNumber);
 }
 
-function removeSkillsPannelInfoFromState(arg) {
-  const player = arg;
+function removeSkillsPannelInfoFromState(player) {
   const playerId = player.id
   const skillsPannelList = $.state.skillsPannelsList;
-  for (var i = 0; i < skillsPannelList.length; i++) {
-    if (skillsPannelList[i].playerId === playerId) {
-      skillsPannelList.splice(i, 1);
-    }
+  const skillsPannelIndex = skillsPannelList.findIndex(panel => panel.player && panel.player.id === playerId);
+  if (skillsPannelList[skillsPannelIndex].player.playerId === playerId) {
+    skillsPannelList.splice(i, 1);
   }
+}
+
+function deactivateInitializingPannel() {
+  let pannelState = $.state.pannelState;
+  if (pannelState !== "initializing") {
+    $.subNode("Initializing").setEnabled(false);
+  }
+}
+
+function isInitializingPannel() {
+  const pannelState = $.state.pannelState;
+  return pannelState === "initializing";
+}
+
+function isPlayerAlreadyEquipped(player) {
+  const skillsPannelsList = $.state.skillsPannelsList
+  const skillsPannel = skillsPannelsList.filter(pannel => pannel.playerId === player.id)
+  return skillsPannel.length !== 0;
+}
+
+function assignPannelToPlayer(player){
+  const skillsPannelsList = $.state.skillsPannelsList
+  for(var i = 0; i < skillsPannelsList.length; i++) {
+    if(skillsPannelsList[i].player) continue;
+    sendEventAllowEquip(skillsPannelsList[i].skillsPannel.id, player);
+    break;
+  }
+}
+
+function sendEventAllowEquip(skillsPannelId, player) {
+  if(isPlayerAlreadyEquipped(player)) return;
+  
+  const skillsPannelList = $.state.skillsPannelsList;
+  const skillPannelIndex = skillsPannelList.findIndex(panel => panel.skillsPannel.id === skillsPannelId);
+  if(skillsPannelList[skillPannelIndex].player) return;
+
+  skillsPannelList[skillPannelIndex].skillsPannel.send("allowEquip", player);
+  skillsPannelList[skillPannelIndex].player = player;
+
+  $.state.skillsPannelsList = skillsPannelList;
 }
