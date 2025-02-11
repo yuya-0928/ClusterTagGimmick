@@ -1,4 +1,4 @@
-// scripts/PannelSwitch.js
+// scripts/PannelSwitch.ts
 function initialize() {
   $.state.items = null;
   $.state.pannelManager = null;

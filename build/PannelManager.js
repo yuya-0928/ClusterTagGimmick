@@ -1,4 +1,4 @@
-// scripts/PannelManager.js
+// scripts/PannelManager.ts
 function initialize() {
   $.state.items = null;
   $.state.i = 0;
@@ -14,7 +14,7 @@ $.onStart(() => {
 });
 $.onUpdate((deltaTime) => {
   deltaTimeFunction(deltaTime, 0.2, sendInitialize);
-  const pannelState = $.state.pannelState;
+  let pannelState = $.state.pannelState;
   if (pannelState !== "initializing") {
     $.subNode("Initializing").setEnabled(false);
   }
@@ -99,10 +99,7 @@ function sendInitialize() {
 }
 function setStateSkillsPannelsList(skillsPannelItemHandle) {
   const skillsPannelsList = $.state.skillsPannelsList;
-  skillsPannelsList.push({
-    player: null,
-    skillsPannel: skillsPannelItemHandle
-  });
+  skillsPannelsList.push({ player: null, skillsPannel: skillsPannelItemHandle });
   $.state.skillsPannelsList = skillsPannelsList;
 }
 function sendEventAllowEquip(skillsPannelId, player) {

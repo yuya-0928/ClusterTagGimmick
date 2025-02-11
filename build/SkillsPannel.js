@@ -1,4 +1,4 @@
-// scripts/SkillsPannel.js
+// scripts/SkillsPannel.ts
 function initialize() {
   $.state.items = null;
   $.state.i = 0;
