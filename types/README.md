@@ -3,7 +3,7 @@
 
 `types/cluster-script.d.ts` の内容は Cluster Kit 公式の型定義ファイルに以下の改良を加えたものになっています。
 
-- `stateProxy`, `groupStateProxy`, `UnityComponentPropertyProxy` の型をカスタム可能にする
+- `ClusterScript.state`, `ClusterScript.groupState`, `UnityComponent.unityProp` の型をカスタム可能にする
 - `ClusterScript.getSignalCompat()` の返り値の型を引数の `parameterType` から推定する
 - `any` と `{}` の型を使用しないようにする
 
