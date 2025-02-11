@@ -9,4 +9,11 @@ for (const file of oldFiles) {
 // Build
 const files = await readdir('./scripts');
 const entrypoints = files.map((file) => `./scripts/${file}`);
-Bun.build({ entrypoints, outdir: './build' });
+await Promise.all(
+  entrypoints.map((entrypoint) =>
+    Bun.build({
+      entrypoints: [entrypoint],
+      outdir: './build',
+    }),
+  ),
+);
