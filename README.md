@@ -1,4 +1,4 @@
-# ClusterTagGimmickDev
+# ClusterTagGimmick
 
 このプロジェクトは、Cluster内で自分の属性を頭の上に表示するギミックの開発を行っています。
 
