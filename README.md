@@ -4,6 +4,9 @@
 
 ![](./Document/sample.png)
 
+mainシーンを以下のワールドにアップロードしています。
+https://cluster.mu/w/5f6dfe4d-1268-4fba-8ad8-119b60491cc8
+
 ## 導入方法
 
 - このリポジトリをcloneし、UnityHub経由で開いてください
