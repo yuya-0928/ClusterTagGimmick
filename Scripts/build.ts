@@ -1,9 +1,11 @@
 import { readdir } from 'node:fs/promises';
 
 // Cleanup
-const oldFiles = await readdir('./build');
+const oldFiles = await readdir('../Assets/Scripts');
 for (const file of oldFiles) {
-  await Bun.file(`./build/${file}`).delete();
+  if (file.endsWith('.js')) {
+    await Bun.file(`../Assets/Scripts/${file}`).delete();
+  }
 }
 
 // Build
@@ -13,7 +15,7 @@ await Promise.all(
   entrypoints.map((entrypoint) =>
     Bun.build({
       entrypoints: [entrypoint],
-      outdir: './build',
+      outdir: '../Assets/Scripts',
     }),
   ),
 );
