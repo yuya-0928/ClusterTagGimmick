@@ -1,22 +1,20 @@
 // scripts/PannelManager.ts
-function initialize() {
-  $.state.items = null;
+$.onStart(() => {
+  $.log("onStart");
   $.state.i = 0;
   $.state.currentTime = 0;
   $.state.skillsPannelsList = [];
   $.state.pannelState = "initializing";
   const distance = 30;
-  if ($.state.items == null)
+  if ($.state.items === undefined)
     $.state.items = $.getItemsNear($.getPosition(), distance);
-}
-$.onStart(() => {
-  initialize();
 });
 $.onUpdate((deltaTime) => {
-  deltaTimeFunction(deltaTime, 0.2, sendInitialize);
   let pannelState = $.state.pannelState;
-  if (pannelState !== "initializing") {
+  deltaTimeFunction(deltaTime, 0.2, sendInitialize);
+  if (pannelState === "initialized") {
     $.subNode("Initializing").setEnabled(false);
+    $.state.pannelState = "initializeDone";
   }
 });
 $.onReceive((messageType, arg, sender) => {
@@ -87,8 +85,8 @@ function deltaTimeFunction(deltaTime, restTime, argFunction) {
     if ($.state.i >= $.state.items.length) {
       $.state.i = 0;
       $.state.currentTime = 0;
-      $.state.pannelState = null;
-      $.state.items = null;
+      $.state.pannelState = "initialized";
+      $.state.items = [];
     }
   }
 }
