@@ -18,7 +18,10 @@ $.onInteract((player) => {
   $.log("SkillsPannel on interact");
   const pannelManagerItemHandle = $.state.pannelManagerItemHandle;
   const skillsPannelItemHaneld = $.itemHandle;
-  pannelManagerItemHandle.send("requestSkillsPannelEquipped", { player, skillsPannel: skillsPannelItemHaneld });
+  pannelManagerItemHandle.send("requestSkillsPannelEquipped", {
+    player,
+    skillsPannel: skillsPannelItemHaneld
+  });
 });
 $.onReceive((messageType, arg, sender) => {
   $.log("SkillsPannel get message");
@@ -52,16 +55,16 @@ $.onReceive((messageType, arg, sender) => {
   }
 });
 $.onUpdate((deltaTime) => {
-  let playerHandle = $.state.playerHandle;
+  const playerHandle = $.state.playerHandle;
   setPlayerPositionRotation(playerHandle);
   if (playerHandle) {
     observePlayer(playerHandle);
   }
-  let pannelManager = $.state.pannelManagerItemHandle;
+  const pannelManager = $.state.pannelManagerItemHandle;
   if (!pannelManager) {
     deltaTimeFunction(deltaTime, 0.2, sendRequestPannelManegerId);
   }
-  let skillsPannelState = $.state.skillsPannelState;
+  const skillsPannelState = $.state.skillsPannelState;
   if (skillsPannelState !== "initializing") {
     $.subNode("Initializing").setEnabled(false);
   }
@@ -71,8 +74,8 @@ function setPlayerPositionRotation(playerHandle) {
     return;
   const offset = new Vector3(0, 2, -0.5);
   try {
-    let playerPosition = playerHandle.getPosition();
-    let playerRotation = playerHandle.getRotation();
+    const playerPosition = playerHandle.getPosition();
+    const playerRotation = playerHandle.getRotation();
     if (playerPosition) {
       $.setPosition(playerPosition.add(offset.applyQuaternion(playerRotation)));
       $.setRotation(playerRotation);

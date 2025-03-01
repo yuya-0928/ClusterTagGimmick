@@ -49,17 +49,15 @@ $.onReceive((messageType, arg, sender) => {
       const player = arg.player;
       const skillsPannelsList = $.state.skillsPannelsList;
       $.log(skillsPannelsList);
-      const skillsPannel = skillsPannelsList.filter((pannel) => pannel.playerId === player.id)[0];
+      const skillsPannel = skillsPannelsList.find((pannel) => pannel.playerId === player.id);
       $.log(skillsPannel);
       if (!skillsPannel) {
         $.log("!skillsPannel");
-        let skillsPannelId;
-        for (var i = 0;i < skillsPannelsList.length; i++) {
-          if (skillsPannelsList[i].playerId)
+        for (const pannel of skillsPannelsList) {
+          if (pannel.playerId)
             continue;
-          skillsPannelId = skillsPannelsList[i].skillsPannel.id;
           $.log("sendEventAllowEquip(skillsPannelId, player);");
-          sendEventAllowEquip(skillsPannelId, player);
+          sendEventAllowEquip(pannel.skillsPannel.id, player);
           break;
         }
       }
@@ -68,10 +66,9 @@ $.onReceive((messageType, arg, sender) => {
       sendEventTagChangeEvent(playre, interactedSwitchNumber);
       break;
     }
-    case "onLeavePlayer": {
+    case "onLeavePlayer":
       removeSkillsPannelInfoFromState(arg);
       break;
-    }
   }
 });
 function deltaTimeFunction(deltaTime, restTime, argFunction) {
@@ -97,13 +94,16 @@ function sendInitialize() {
 }
 function setStateSkillsPannelsList(skillsPannelItemHandle) {
   const skillsPannelsList = $.state.skillsPannelsList;
-  skillsPannelsList.push({ player: null, skillsPannel: skillsPannelItemHandle });
+  skillsPannelsList.push({
+    player: null,
+    skillsPannel: skillsPannelItemHandle
+  });
   $.state.skillsPannelsList = skillsPannelsList;
 }
 function sendEventAllowEquip(skillsPannelId, player) {
   $.log("sendEventAllowEquip");
   const skillsPannelList = $.state.skillsPannelsList;
-  let playerAlreadyEquiped;
+  let playerAlreadyEquiped = false;
   let alreadyEquipedPannel;
   skillsPannelList.forEach((pannel) => {
     if (pannel.player && pannel.player.id === player.id) {
@@ -114,8 +114,8 @@ function sendEventAllowEquip(skillsPannelId, player) {
   try {
     alreadyEquipedPannel.send("isPannelExistNear");
   } catch {
-    for (var i = 0;i < skillsPannelList.length; i++) {
-      if (skillsPannelList[i].playerId === player.id) {
+    for (const pannel of skillsPannelList) {
+      if (pannel.playerId === player.id) {
         skillsPannelList.splice(i, 1);
       }
     }
@@ -147,9 +147,9 @@ function removeSkillsPannelInfoFromState(arg) {
   const player = arg;
   const playerId = player.id;
   const skillsPannelList = $.state.skillsPannelsList;
-  for (var i = 0;i < skillsPannelList.length; i++) {
-    if (skillsPannelList[i].playerId === playerId) {
-      skillsPannelList.splice(i, 1);
+  skillsPannelList.forEach((pannel, i2) => {
+    if (pannel.playerId === playerId) {
+      skillsPannelList.splice(i2, 1);
     }
-  }
+  });
 }

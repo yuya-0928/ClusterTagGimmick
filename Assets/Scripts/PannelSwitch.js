@@ -12,7 +12,7 @@ function initialize() {
 $.onStart(() => {
   initialize();
 });
-$.onReceive((messageType, arg, sender) => {
+$.onReceive((messageType, _arg, sender) => {
   switch (messageType) {
     case "switchInitialize":
       $.state.pannelManager = sender;
@@ -24,10 +24,13 @@ $.onInteract((player) => {
   const pannelManager = $.state.pannelManager;
   const switchNumber = $.state.switchNumber;
   $.log(switchNumber);
-  pannelManager.send("onSwitchInteracted", { player, interactedSwitchNumber: switchNumber });
+  pannelManager.send("onSwitchInteracted", {
+    player,
+    interactedSwitchNumber: switchNumber
+  });
 });
 $.onUpdate(() => {
-  let pannelManagerId = $.state.pannelManagerId;
+  const pannelManagerId = $.state.pannelManagerId;
   setStatePannelManagerItemHandle(pannelManagerId);
 });
 function setStatePannelManagerItemHandle(pannelManagerId) {
