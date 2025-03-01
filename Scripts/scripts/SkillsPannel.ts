@@ -1,3 +1,15 @@
+declare module '../types/cluster-script.d.ts' {
+  interface StateProxy {
+    items: ItemHandle[] | null;
+    i: number;
+    currentTime: number;
+    pannelManagerId: number | null;
+    pannelManagerItemHandle: ItemHandle | null;
+    playerHandle: PlayerHandle | null;
+    skillsPannelState: 'initializing' | null;
+  }
+}
+
 function initialize() {
   $.state.items = null;
   $.state.i = 0;
@@ -6,7 +18,7 @@ function initialize() {
   $.state.pannelManagerId = null;
   $.state.pannelManagerItemHandle = null;
   $.state.playerHandle = null;
-  $.state.skillsPannelState = "initializing"
+  $.state.skillsPannelState = 'initializing';
 
   const distance = 30;
   if ($.state.items == null)
@@ -15,36 +27,39 @@ function initialize() {
 
 $.onStart(() => {
   initialize();
-})
+});
 
 $.onInteract((player) => {
   $.log('SkillsPannel on interact');
   const pannelManagerItemHandle = $.state.pannelManagerItemHandle;
   const skillsPannelItemHaneld = $.itemHandle;
-  pannelManagerItemHandle.send("requestSkillsPannelEquipped", { player: player, skillsPannel: skillsPannelItemHaneld });
+  pannelManagerItemHandle.send('requestSkillsPannelEquipped', {
+    player: player,
+    skillsPannel: skillsPannelItemHaneld,
+  });
 });
 
 $.onReceive((messageType, arg, sender) => {
   $.log('SkillsPannel get message');
   switch (messageType) {
-    case "allowEquip": {
-      $.log('allowEquip')
+    case 'allowEquip': {
+      $.log('allowEquip');
       const player = arg;
-      $.state.playerHandle = player
+      $.state.playerHandle = player;
       break;
     }
-    case "pannelInitialize": {
+    case 'pannelInitialize': {
       const currentState = $.state.skillsPannelState;
-      if (currentState !== "initializing") return;
+      if (currentState !== 'initializing') return;
 
       const pannelManager = sender;
       $.state.pannelManagerItemHandle = pannelManager;
       sendEventOnInitializeSkillsPannel();
       break;
     }
-    case "tagChangeEvent": {
+    case 'tagChangeEvent': {
       const interactedSwitchNumber = arg;
-      const tagName = `tag_${interactedSwitchNumber}`
+      const tagName = `tag_${interactedSwitchNumber}`;
       const tagObject = $.subNode(tagName);
       const isDisplayed = tagObject.getEnabled();
       tagObject.setEnabled(!isDisplayed);
@@ -57,32 +72,32 @@ $.onReceive((messageType, arg, sender) => {
 });
 
 $.onUpdate((deltaTime) => {
-  let playerHandle = $.state.playerHandle;
-  setPlayerPositionRotation(playerHandle)
+  const playerHandle = $.state.playerHandle;
+  setPlayerPositionRotation(playerHandle);
 
   if (playerHandle) {
     observePlayer(playerHandle);
   }
 
-  let pannelManager = $.state.pannelManagerItemHandle;
+  const pannelManager = $.state.pannelManagerItemHandle;
   if (!pannelManager) {
-    deltaTimeFunction(deltaTime, 0.2, sendRequestPannelManegerId)
+    deltaTimeFunction(deltaTime, 0.2, sendRequestPannelManegerId);
   }
 
-  let skillsPannelState = $.state.skillsPannelState
-  if (skillsPannelState !== "initializing") {
-    $.subNode("Initializing").setEnabled(false);
+  const skillsPannelState = $.state.skillsPannelState;
+  if (skillsPannelState !== 'initializing') {
+    $.subNode('Initializing').setEnabled(false);
   }
-})
+});
 
-function setPlayerPositionRotation(playerHandle) {
+function setPlayerPositionRotation(playerHandle: PlayerHandle | null) {
   if (!playerHandle) return;
 
   const offset = new Vector3(0, 2, -0.5);
 
   try {
-    let playerPosition = playerHandle.getPosition();
-    let playerRotation = playerHandle.getRotation();
+    const playerPosition = playerHandle.getPosition();
+    const playerRotation = playerHandle.getRotation();
     if (playerPosition) {
       $.setPosition(playerPosition.add(offset.applyQuaternion(playerRotation)));
       $.setRotation(playerRotation);
@@ -94,7 +109,7 @@ function setPlayerPositionRotation(playerHandle) {
     const pannelManager = $.state.pannelManagerItemHandle;
     $.log('pannel destroy and send onLeavePlayer');
     try {
-      pannelManager.send("onLeavePlayer", currentPlayerHandle);
+      pannelManager.send('onLeavePlayer', currentPlayerHandle);
     } catch {
       $.destroy();
     }
@@ -103,7 +118,11 @@ function setPlayerPositionRotation(playerHandle) {
   }
 }
 
-function deltaTimeFunction(deltaTime, restTime, argFunction) {
+function deltaTimeFunction(
+  deltaTime: number,
+  restTime: number,
+  argFunction: () => void,
+) {
   if ($.state.items != null) {
     $.state.currentTime += deltaTime;
     if ($.state.currentTime >= restTime && $.state.i < $.state.items.length) {
@@ -121,16 +140,16 @@ function deltaTimeFunction(deltaTime, restTime, argFunction) {
 }
 
 function sendRequestPannelManegerId() {
-  $.state.items[$.state.i].send("requestPannelManagerId", "");
+  $.state.items[$.state.i].send('requestPannelManagerId', '');
   $.log(`${$.state.items[$.state.i]}${$.state.i}にメッセージを送りました`);
 }
 
-function observePlayer(currentPlayerHandle) {
+function observePlayer(currentPlayerHandle: PlayerHandle) {
   const isPlayerExist = currentPlayerHandle.exists();
 
   if (!isPlayerExist) {
     const pannelManager = $.state.pannelManagerItemHandle;
-    pannelManager.send("onLeavePlayer", currentPlayerHandle);
+    pannelManager.send('onLeavePlayer', currentPlayerHandle);
     // スポーンした場合のみ適用される。元からワールドに設定されている場合はdestroyされない。
     $.destroy();
   }
@@ -138,8 +157,12 @@ function observePlayer(currentPlayerHandle) {
 
 function sendEventOnInitializeSkillsPannel() {
   const pannelManagerItemHandle = $.state.pannelManagerItemHandle;
-  const skillsPannelItemHandle = $.ItemHandle
+  // TODO: 存在しないパラメータ ItemHandle ？
+  const skillsPannelItemHandle = $.ItemHandle;
 
-  pannelManagerItemHandle.send("onInitializeSkillsPannel", skillsPannelItemHandle);
+  pannelManagerItemHandle.send(
+    'onInitializeSkillsPannel',
+    skillsPannelItemHandle,
+  );
   $.state.skillsPannelState = null;
 }
