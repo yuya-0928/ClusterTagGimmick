@@ -942,22 +942,26 @@ interface ClusterScript {
    *
    * @example
    * ```ts
-   * // 自身のアイテムを対象に foo という識別子の boolean型のメッセージを取得する。
+   * // 自身のアイテムを対象に foo という識別子の boolean 型のメッセージを取得する。
    * $.getStateCompat("this", "foo", "boolean");
    * ```
    *
    * @param target メッセージを取得する対象
    *
-   * "this": このアイテムへのメッセージを取得します。
+   * `"this"`: このアイテムへのメッセージを取得します。
    *
-   * "owner": このアイテムのオーナーへのメッセージを取得します。
+   * `"owner"`: このアイテムのオーナーへのメッセージを取得します。
    *
-   * "global": Globalへのメッセージを取得します。
+   * `"global"`: Globalへのメッセージを取得します。
    *
    * @param key メッセージの識別子
    * @param parameterType メッセージの型
    *
-   * "signal", "boolean", "float", "double", "integer", "vector2", "vector3" が利用できます。
+   * `"signal"`, `"boolean"`, `"float"`, `"double"`, `"integer"`, `"vector2"`, `"vector3"` が利用できます。
+   *
+   * @returns
+   * `parameterType` に `"signal"` を指定した場合、シグナルが通知された日時を `Date` として返します。\
+   * それ以外の場合、メッセージの値を返します。メッセージの値が存在する場合、それは数値, boolean, {@link Vector2}, {@link Vector3} のうちいずれかです。
    */
   getStateCompat<T extends CompatParamType = CompatParamType>(
     target: CompatGimmickTarget,
@@ -965,7 +969,7 @@ interface ClusterScript {
     parameterType: T,
   ):
     | {
-        signal: never;
+        signal: Date;
         boolean: boolean;
         float: number;
         double: number;
@@ -988,12 +992,14 @@ interface ClusterScript {
    *
    * @param target メッセージを通知する対象
    *
-   * "this": このアイテムへメッセージを通知します。
+   * `"this"`: このアイテムへメッセージを通知します。
    *
-   * "owner": このアイテムのオーナーへメッセージを通知します。
+   * `"owner"`: このアイテムのオーナーへメッセージを通知します。
    *
    * @param key メッセージの識別子
    * @param value メッセージの値
+   *
+   * 数値, boolean, {@link Vector2}, {@link Vector3} が利用できます。
    */
   setStateCompat(
     target: CompatStateTarget,
@@ -1008,9 +1014,9 @@ interface ClusterScript {
    *
    * @param target メッセージを通知する対象
    *
-   * "this": このアイテムへメッセージを通知します。
+   * `"this"`: このアイテムへメッセージを通知します。
    *
-   * "owner": このアイテムのオーナーへメッセージを通知します。
+   * `"owner"`: このアイテムのオーナーへメッセージを通知します。
    *
    * @param key メッセージの識別子
    */
@@ -2105,7 +2111,6 @@ declare global {
    */
   class WorldItemTemplateId {
     /**
-     * @beta
      * ワールドアイテムテンプレートを参照するためのIDを表すインスタンスを生成します。
      *
      * @param id WorldItemTemplateListで設定したId
@@ -2846,6 +2851,32 @@ declare global {
      * @returns プレイヤーのイベントのロール
      */
     getEventRole(): EventRole | null;
+
+    /**
+     * プレイヤーが現在使用しているアバター商品の商品IDを取得します。
+     *
+     * 使用しているアバターが商品でない場合は `null` を返します。\
+     * プレイヤーがアバターメイカーを起動している間は、アバターメイカー起動前に使用していたアバターの商品IDを返します。\
+     * プレイヤーがアバターを変更した直後は、直前に使用していたアバターの商品IDを返すことがあります。\
+     * プレイヤーが入場した直後は `null` を返すことがあります。\
+     * プレイヤーが存在しないとき、`null` を返します。プレイヤーの存在は{@link PlayerHandle.exists}で確認できます。
+     *
+     * @returns プレイヤーが現在使用しているアバターの商品ID
+     */
+    getAvatarProductId(): string | null;
+
+    /**
+     * プレイヤーが現在使用しているアクセサリー商品の商品IDの配列を取得します。
+     *
+     * 使用しているアクセサリーが商品でない場合は配列に含まれません。\
+     * プレイヤーがアクセサリーを編集している間は、アクセサリー編集前に使用していたアクセサリーの商品IDを返します。\
+     * プレイヤーがアクセサリーを保存した直後は、直前に使用していたアクセサリーの商品IDを返すことがあります。\
+     * プレイヤーが入場した直後は空の配列を返すことがあります。\
+     * プレイヤーが存在しないとき、空の配列を返します。プレイヤーの存在は{@link PlayerHandle.exists}で確認できます。
+     *
+     * @returns プレイヤーが現在使用しているアクセサリーの商品IDの配列
+     */
+    getAccessoryProductIds(): string[];
   }
 }
 
@@ -3062,7 +3093,7 @@ declare global {
     /**
      * `forward` の方向へ向き、かつ上方向が `up` の向きとなるような回転を表すQuaternionを生成します。
      *
-     * `up`は省略可能であり、省略した場合は {@link Vector3.up | Vector3.up} を指定したのと同様に扱われます。
+     * `up`は省略可能であり、省略した場合は `new Vector3(0, 1, 0)` を指定したのと同様に扱われます。
      *
      * @param forward
      * @param up
@@ -5085,6 +5116,32 @@ interface PlayerScript {
    * Open Sound Control (OSC)の受信を行うためのハンドルです。
    */
   readonly oscHandle: OscHandle;
+
+  /**
+   * プレイヤーが現在使用しているアバター商品の商品IDを取得します。
+   *
+   * 使用しているアバターが商品でない場合は `null` を返します。\
+   * プレイヤーがアバターメイカーを起動している間は、アバターメイカー起動前に使用していたアバターの商品IDを返します。\
+   * プレイヤーがアバターを変更した直後は、直前に使用していたアバターの商品IDを返すことがあります。\
+   * プレイヤーが入場した直後は `null` を返すことがあります。\
+   * プレイヤーが存在しないとき、`null` を返します。プレイヤーの存在は{@link PlayerHandle.exists}で確認できます。
+   *
+   * @returns プレイヤーが現在使用しているアバターの商品ID。
+   */
+  getAvatarProductId(): string | null;
+
+  /**
+   * プレイヤーが現在使用しているアクセサリー商品の商品IDの配列を取得します。
+   *
+   * 使用しているアクセサリーが商品でない場合は配列に含まれません。\
+   * プレイヤーがアクセサリーを編集している間は、アクセサリー編集前に使用していたアクセサリーの商品IDを返します。\
+   * プレイヤーがアクセサリーを保存した直後は、直前に使用していたアクセサリーの商品IDを返すことがあります。\
+   * プレイヤーが入場した直後は空の配列を返すことがあります。\
+   * プレイヤーが存在しないとき、空の配列を返します。プレイヤーの存在は{@link PlayerHandle.exists}で確認できます。
+   *
+   * @returns プレイヤーが現在使用しているアクセサリーの商品IDの配列。
+   */
+  getAccessoryProductIds(): string[];
 }
 
 /**
